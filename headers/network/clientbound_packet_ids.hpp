@@ -2,8 +2,8 @@
 // Created by cory on 4/29/25.
 //
 
-#ifndef CLAMS_CLIENTBOUND_PACKET_IDS_H
-#define CLAMS_CLIENTBOUND_PACKET_IDS_H
+#ifndef CLAMS_CLIENTBOUND_PACKET_IDS_HPP
+#define CLAMS_CLIENTBOUND_PACKET_IDS_HPP
 
 // status state
 #define STATUS_RESPONSE (0x00)
@@ -38,4 +38,4 @@
 
 // play state
 
-#endif //CLAMS_CLIENTBOUND_PACKET_IDS_H
+#endif //CLAMS_CLIENTBOUND_PACKET_IDS_HPP
