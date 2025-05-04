@@ -182,7 +182,7 @@ void WriteBuffer::write_uuid(const UUID& uuid)
 
 void WriteBuffer::write_iov(char* bytes, size_t size)
 {
-    packet_length += size;
+    packet_length += static_cast<int>(size);
 
     iovec* vec = _iov + iov_cursor;
     vec->iov_base = bytes;
@@ -250,10 +250,9 @@ bool WriteBuffer::flush_buffer()
 
 iovec* WriteBuffer::finalize()
 {
-    std::cout << "_len: " << packet_length << std::endl;
-
     if (flush_buffer() || iov_cursor)
     {
+        //std::cout << "packet_length: " << packet_length << std::endl;
         // if the buf was flushed, we can guarantee at least one iovec present
 
         // write _len to len
@@ -286,23 +285,23 @@ iovec* WriteBuffer::finalize()
             start[i] = len[i];
         }
 
-        size_t printed = 0;
-
-        std::cout << std::hex;
-        for (int i = 0; i < iov_cursor; ++i)
-        {
-            for (size_t j = 0; j < _iov[i].iov_len; ++j)
-            {
-                if (printed % 16 == 0 && printed > 0)
-                {
-                    std::cout << std::endl;
-                }
-
-                std::cout << (static_cast<unsigned int>(reinterpret_cast<char*>(_iov[i].iov_base)[j]) & 0xff) << " ";
-                ++printed;
-            }
-        }
-        std::cout << std::dec << std::endl;
+//        size_t printed = 0;
+//
+//        std::cout << std::hex;
+//        for (int i = 0; i < iov_cursor; ++i)
+//        {
+//            for (size_t j = 0; j < _iov[i].iov_len; ++j)
+//            {
+//                if (printed % 16 == 0 && printed > 0)
+//                {
+//                    std::cout << std::endl;
+//                }
+//
+//                std::cout << (static_cast<unsigned int>(reinterpret_cast<char*>(_iov[i].iov_base)[j]) & 0xff) << " ";
+//                ++printed;
+//            }
+//        }
+//        std::cout << std::dec << std::endl;
     }
 
     return _iov;
