@@ -2,18 +2,28 @@
 // Created by cory on 1/16/25.
 //
 
+#define PRINT_SERVERBOUND
+
+#ifdef PRINT_SERVERBOUND
+#include <iostream>
+#define debug(stmt) stmt
+#elif
+#define debug(stmt)
+#endif
+
 #include <sys/eventfd.h>
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <unordered_map>
 #include "network/tcpserver.hpp"
 #include "network/worker.hpp"
 #include "server.hpp"
-#include "clamsutil.hpp"
 #include "network/readbuffer.hpp"
 
 // How many events an epoll_wait can handle at once.
 // fixme bump this up?
 #define MAX_EVENTS (128)
+#define PROTOCOL_VERSION (770)
 
 void handshake(Connection* conn, ReadBuffer& rbuf)
 {
@@ -24,11 +34,12 @@ void handshake(Connection* conn, ReadBuffer& rbuf)
 
     // TODO: DDoS protection?
 
-    debug(std::cout << "handshake" << std::endl
-                    << "  pvn:   " << pvn << std::endl
-                    << "  ip:    " << ip << std::endl
-                    << "  port:  " << port << std::endl
-                    << "  state: " << next_state << std::endl;)
+    debug(
+    logger().info("[%i > S] handshake", conn->fd);
+    logger().info("  pvn:   %i", pvn);
+    logger().info("  ip:    %s", ip.c_str());
+    logger().info("  port:  %i", port);
+    logger().info("  state: %i", next_state);)
 
     switch (next_state)
     {
@@ -49,8 +60,23 @@ void handshake(Connection* conn, ReadBuffer& rbuf)
  */
 void status_request(Connection* conn, ReadBuffer& rbuf)
 {
-    debug(std::cout << "status_request" <<  std::endl;)
-    conn->set_state(HANDSHAKE);
+    debug(logger().info("[%i > S] status_request", conn->fd);)
+
+    //{
+    //  "version":
+    //  {
+    //    "name":"1.21.4",
+    //    "protocol":769
+    //  },
+    //  "enforcesSecureChat":true,
+    //  "description":"A.Minecraft.Server",
+    //  "players":
+    //  {
+    //    "max":20,
+    //    "online":0
+    //  }
+    //}
+    conn->send_status_response(R"({"version":{"name":"1.21.4","protocol":769},"enforcesSecureChat":true,"description":"A.Minecraft.Server","players":{"max":20,"online":0}})");
 }
 
 /**
@@ -58,7 +84,13 @@ void status_request(Connection* conn, ReadBuffer& rbuf)
  */
 void ping_request(Connection* conn, ReadBuffer& rbuf)
 {
-    debug(std::cout << "ping_request" << std::endl;)
+    long time = rbuf.read_long();
+
+    debug(
+    logger().info("[%i > S] ping_request", conn->fd);
+    logger().info("  time: %li", time);)
+
+    conn->send_pong_response(time);
     conn->set_state(HANDSHAKE);
 }
 
@@ -67,14 +99,17 @@ void login_start(Connection* conn, ReadBuffer& rbuf)
     std::string username = rbuf.read_string();
     UUID uuid = rbuf.read_uuid();
 
-    debug(std::cout << "login_start" << std::endl
-              << "  name: " << username << std::endl
-              << "  uuid: " << uuid << std::endl;)
+    debug(
+    logger().info("[%i > S] login_start", conn->fd);
+    logger().info("  name: %s", username.c_str());
+    std::cout << "  uuid: " << uuid << std::endl;)
 
     // todo validate name and uuid with mojang api?
 
     conn->init_player(username, uuid);
-    conn->send_encryption_request("", get_public_key(), "byte", false);
+    conn->send_set_compression(256);
+    // todo fixme uuid
+    conn->send_login_success(conn->player()->uuid(), conn->player()->username(), "");
 }
 
 void encryption_response(Connection* conn, ReadBuffer& rbuf)
@@ -82,26 +117,28 @@ void encryption_response(Connection* conn, ReadBuffer& rbuf)
     std::string secret = rbuf.read_string();
     std::string token = rbuf.read_string();
 
-    debug(std::cout << "encryption_response" << std::endl
-                    << "  secret: " << secret << std::endl
-                    << "  token: " << token << std::endl;)
-
-    conn->send_set_compression(256);
-    conn->send_login_success(conn->player()->uuid(), conn->player()->username(), "");
+    debug(
+    logger().info("[%i > S] encryption_response", conn->fd);
+    logger().info("  secret: %s", secret.c_str());
+    logger().info("  token: %s", token.c_str());)
 }
 
 void login_plugin_response(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] login_plugin_response", conn->fd);)
+}
 
 void login_acknowledged(Connection* conn, ReadBuffer& rbuf)
 {
-    debug(std::cout << "login_acknowledged" << std::endl;)
+    debug(logger().info("[%i > S] login_acknowledged", conn->fd);)
 
     conn->set_state(CONFIG);
 }
 
 void cookie_response(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] cookie_response", conn->fd);)
+}
 
 void client_information(Connection* conn, ReadBuffer& rbuf)
 {
@@ -114,28 +151,81 @@ void client_information(Connection* conn, ReadBuffer& rbuf)
     bool text_filtering = rbuf.read_bool();
     bool allow_server_listings = rbuf.read_bool();
     char particles = rbuf.read_char();
+
+    debug(
+    logger().info("[%i > S] client_information", conn->fd);
+    logger().info("  view_distance: %i", view_distance);
+    logger().info("  chat_mode: %i", chat_mode);
+    logger().info("  chat_colors: %i", chat_colors);
+    logger().info("  skin_parts: %i", skin_parts);
+    logger().info("  main_hand: %i", main_hand);
+    logger().info("  text_filtering: %i", text_filtering);
+    logger().info("  allow_server_listings: %i", allow_server_listings);
+    logger().info("  particles: %i", particles);)
+
+    conn->send_plugin_message_config("minecraft:brand", "CLAMS");
+    std::string flags[] = {"minecraft:vanilla"};
+    conn->send_feature_flags(flags, 1);
+    conn->send_finish_config();
 }
 
 void cookie_response_config(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] cookie_response_config", conn->fd);)
+}
+
+void brand(Connection* conn, ReadBuffer& rbuf)
+{
+    std::string brand = rbuf.read_string();
+
+    debug(logger().info("  brand: %s", brand.c_str());)
+}
+
+typedef void(*channel_handler)(Connection*, ReadBuffer&);
+std::unordered_map<std::string, channel_handler> channel_handlers = {{"minecraft:brand", brand}};
 
 void plugin_message(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    std::string channel = rbuf.read_string();
+    auto itr = channel_handlers.find(channel);
+
+    debug(
+    logger().info("[%i > S] plugin_message", conn->fd);
+    logger().info("  channel: %s", channel.c_str());)
+
+    if (itr == channel_handlers.end())
+    {
+        logger().err("Unknown plugin channel: %s", channel.c_str());
+    } else
+    {
+        itr->second(conn, rbuf);
+    }
+}
 
 void acknowledge_finish_config(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] acknowledge_finish_config", conn->fd);)
+}
 
 void keep_alive_config(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] keep_alive_config", conn->fd);)
+}
 
 void pong(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] pong_config", conn->fd);)
+}
 
 void resource_pack_response(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] resource_pack_response", conn->fd);)
+}
 
 void known_packs(Connection* conn, ReadBuffer& rbuf)
-{}
+{
+    debug(logger().info("[%i > S] known_packs", conn->fd);)
+}
 
 typedef void(*packet_parser)(Connection*, ReadBuffer&);
 
@@ -270,8 +360,6 @@ void NetworkWorker::listen() const
                     char packet_id = conn->rbuf.read_char();
 
                     // todo packet compression
-
-                    debug(logger().info("%i byte(s) for id %i.", conn->rbuf.total_packet_length(), packet_id);)
 
                     parsers[conn->get_state()][packet_id](conn, conn->rbuf);
 
