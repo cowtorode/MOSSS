@@ -83,59 +83,33 @@ public:
 
     [[nodiscard]] inline Player* player() const { return handle; }
 
+    void write_wbuf();
+
     // STATUS
+    void send_status_response(const std::string& response);
 
-    void send_status_response();
-
-    void send_pong_response();
+    void send_pong_response(long timestamp);
 
     // LOGIN
-
-    /**
-     * id 0x00
-     */
     void send_disconnect_login(const std::string& reason);
 
-    /**
-     * id 0x01
-     */
     void send_encryption_request(const std::string& server_id, const std::string& key, const std::string& token, bool verify);
 
-    /**
-     * id 0x02
-     */
     void send_login_success(const UUID& uuid, const std::string& username, const std::string& property);
 
-    /**
-     * id 0x03
-     */
     void send_set_compression(int size);
 
-    /**
-     * id 0x04
-     */
     void send_login_plugin_request();
 
-    /**
-     * id 0x05
-     */
     void send_cookie_request_login();
 
     // CONFIG
 
-    /**
-     * id 0x00
-     */
-     void send_cookie_request_config();
+     void send_cookie_request_config(const std::string& identifer);
 
-     /**
-      * id 0x01
-      */
-     void send_plugin_message_config();
+     // fixme
+     void send_plugin_message_config(const std::string& channel, const std::string& data);
 
-     /**
-      * id 0x02
-      */
      void send_disconnect_config();
 
      void send_finish_config();
@@ -156,7 +130,7 @@ public:
 
      void send_transfer();
 
-     void send_feature_flags();
+     void send_feature_flags(const std::string flags[], int len);
 
      void send_update_tags_config();
 
