@@ -17,11 +17,13 @@ enum GameMode
 class Player : public Entity
 {
 public:
-    Player(UUID uuid, std::string& username);
+    Player(UUID& uuid, std::string& username);
 
     ~Player();
+
+    [[nodiscard]] inline const std::string& username() const { return name; }
 private:
-    std::string username;
+    std::string name;
 };
 
 

@@ -4,7 +4,7 @@
 
 #include "entity/player.hpp"
 
-Player::Player(UUID uuid, std::string& username) : Entity(uuid), username(username)
+Player::Player(UUID& uuid, std::string& username) : Entity(uuid), name(username)
 {}
 
 Player::~Player() = default;

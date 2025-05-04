@@ -4,5 +4,5 @@
 
 #include "entity/entity.hpp"
 
-Entity::Entity(UUID uuid) : uuid(uuid)
+Entity::Entity(UUID uid) : uid(uid)
 {}

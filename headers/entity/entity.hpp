@@ -12,12 +12,14 @@
 class Entity
 {
 public:
-    explicit Entity(UUID uuid);
+    explicit Entity(UUID uid);
 
     Position getPosition() { return pos; }
+
+    inline const UUID& uuid() const { return uid; }
 protected:
     Position pos;
-    UUID uuid;
+    UUID uid;
 };
 
 
