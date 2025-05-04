@@ -190,14 +190,37 @@ void Connection::init_player(std::string username, UUID uuid)
     handle = new Player(uuid, username);
 }
 
+void Connection::write_wbuf()
+{
+    writev(fd, wbuf.finalize(), wbuf.iov_size());
+
+    wbuf.reset();
+}
+
+void Connection::send_status_response(const std::string& response)
+{
+    wbuf.write_byte(STATUS_RESPONSE);
+    wbuf.write_string(response);
+
+    debug(std::cout << "[S>C] status_response" << std::endl;)
+    write_wbuf();
+}
+
+void Connection::send_pong_response(long timestamp)
+{
+    wbuf.write_byte(STATUS_PONG_RESPONSE);
+    wbuf.write_long(timestamp);
+
+    debug(std::cout << "[S>C] pong_response" << std::endl;)
+    write_wbuf();
+}
+
 void Connection::send_disconnect_login(const std::string& reason)
 {
     wbuf.write_byte(LOGIN_DISCONNECT);
     wbuf.write_string(reason);
 
-    writev(fd, wbuf.finalize(), wbuf.iov_size());
-
-    wbuf.reset();
+    write_wbuf();
 }
 
 void Connection::send_encryption_request(const std::string& server_id, const std::string& key, const std::string& token, bool verify)
@@ -208,28 +231,17 @@ void Connection::send_encryption_request(const std::string& server_id, const std
     wbuf.write_string(token);
     wbuf.write_bool(verify);
 
-    iovec* iov = wbuf.finalize();
-    int iov_size = wbuf.iov_size();
-
-    //std::cout << ((int) ((char*) (iov + iov_size - 1)->iov_base)[(iov + iov_size - 1)->iov_len - 1]) << std::endl;
-
-    writev(fd, iov, iov_size);
-
-    wbuf.reset();
+    write_wbuf();
 }
 
 void Connection::send_login_success(const UUID& uuid, const std::string& username, const std::string& property)
 {
-//    unsigned char packet[26] = {0x00, 0x02, 0xb0, 0x74, 0x6b, 0x73, 0xd5, 0x61, 0x31, 0x9a, 0xb5, 0x50, 0x6c, 0x27, 0x3b, 0x88, 0xd7, 0x77, 0x06, 0x50, 0x76, 0x62, 0x62, 0x6c, 0x65, 0x00};
-//    wbuf.write_bytes(reinterpret_cast<char*>(packet), 26);
     wbuf.write_byte(LOGIN_SUCCESS);
     wbuf.write_uuid(uuid);
     wbuf.write_string(username);
     wbuf.write_string(property);
 
-    writev(fd, wbuf.finalize(), wbuf.iov_size());
-
-    wbuf.reset();
+    write_wbuf();
 }
 
 void Connection::send_set_compression(int size)
@@ -237,7 +249,39 @@ void Connection::send_set_compression(int size)
     wbuf.write_byte(LOGIN_SET_COMPRESSION);
     wbuf.write_varint(size);
 
-    writev(fd, wbuf.finalize(), wbuf.iov_size());
+    write_wbuf();
+}
 
-    wbuf.reset();
+void Connection::send_cookie_request_config(const std::string& identifer)
+{
+
+}
+
+void Connection::send_plugin_message_config(const std::string& channel, const std::string& data)
+{
+    wbuf.write_byte(CONFIG_PLUGIN_MESSAGE);
+    wbuf.write_string(channel);
+    wbuf.write_string(data);
+
+    write_wbuf();
+}
+
+void Connection::send_finish_config()
+{
+    wbuf.write_byte(CONFIG_FINISH);
+
+    write_wbuf();
+}
+
+void Connection::send_feature_flags(const std::string* flags, int len)
+{
+    wbuf.write_byte(CONFIG_FEATURE_FLAGS);
+    wbuf.write_varint(len);
+
+    for (int i = 0; i < len; ++i)
+    {
+        wbuf.write_string(flags[i]);
+    }
+
+    write_wbuf();
 }
