@@ -11,6 +11,8 @@
 #include "clamsutil.hpp"
 #include "network/readbuffer.hpp"
 
+// How many events an epoll_wait can handle at once.
+// fixme bump this up?
 #define MAX_EVENTS (128)
 
 void handshake(Connection* conn, ReadBuffer& rbuf)
@@ -69,11 +71,10 @@ void login_start(Connection* conn, ReadBuffer& rbuf)
               << "  name: " << username << std::endl
               << "  uuid: " << uuid << std::endl;)
 
-    // todo validate username and uuid with mojang api?
+    // todo validate name and uuid with mojang api?
 
     conn->init_player(username, uuid);
-    conn->send_set_compression(256);
-    conn->send_login_success(uuid, username, "");
+    conn->send_encryption_request("", get_public_key(), "byte", false);
 }
 
 void encryption_response(Connection* conn, ReadBuffer& rbuf)
@@ -84,6 +85,9 @@ void encryption_response(Connection* conn, ReadBuffer& rbuf)
     debug(std::cout << "encryption_response" << std::endl
                     << "  secret: " << secret << std::endl
                     << "  token: " << token << std::endl;)
+
+    conn->send_set_compression(256);
+    conn->send_login_success(conn->player()->uuid(), conn->player()->username(), "");
 }
 
 void login_plugin_response(Connection* conn, ReadBuffer& rbuf)
@@ -177,7 +181,7 @@ Connection* NetworkWorker::connect(int client_fd) const
     // add the client to the epoll's interest list
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, client_fd, &event) == -1)
     {
-        perror("NetworkWorker::connect(): epoll_ctl(): EPOLL_CTL_ADD");
+        perror("NetworkWorker::connect(int): epoll_ctl(): EPOLL_CTL_ADD");
         disconnect(conn);
         return nullptr;
     }
@@ -225,18 +229,11 @@ NetworkWorker::~NetworkWorker()
     }
 }
 
-void sigusr1(int no)
-{
-    logger().info("NetworkWorker::sigusr1(): received SIGUSR1");
-}
-
 void NetworkWorker::listen() const
 {
     Connection* conn;
-    ReadBuffer rbuf;
     epoll_event events[MAX_EVENTS];
     int nfds;
-    ssize_t res;
 
     while (is_running())
     {
@@ -258,24 +255,37 @@ void NetworkWorker::listen() const
                 goto shutdown;
             }
 
-            res = recv(conn->fd, conn->rbuf, CONN_BUFFER_SIZE, 0);
-
-            if (res == -1)
+            try
             {
-                perror("NetworkWorker::listen(): recv()");
-                disconnect(conn);
-                continue;
-            }
+                conn->process_events(conn);
 
-            if (res == 0)
+                // Note: If the connection is disconnected, conn->ready() will be called, but it will
+                // always fail
+
+                /* If the connection is ready for parsing, meaning
+                   that it has copied all the data from the OS, */
+                if (conn->ready())
+                {
+                    // Length is already read (that's a part of conn::process_events())
+                    char packet_id = conn->rbuf.read_char();
+
+                    // todo packet compression
+
+                    debug(logger().info("%i byte(s) for id %i.", conn->rbuf.total_packet_length(), packet_id);)
+
+                    parsers[conn->get_state()][packet_id](conn, conn->rbuf);
+
+                    conn->reset();
+                }
+            } catch (const MalformedVarintException& mve)
             {
+                logger().err("MalformedVarintException");
                 disconnect(conn);
-                continue;
+            } catch (const BufferOverflowException& boe)
+            {
+                logger().err("BufferOverflowException");
+                disconnect(conn);
             }
-
-            //debug(std::cout << res << " byte(s) for id " << packet_id << ": ";)
-
-            // parsers[conn->get_state()][packet_id](conn, rbuf);
         }
     }
     shutdown:;

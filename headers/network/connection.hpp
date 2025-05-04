@@ -6,12 +6,11 @@
 #define CLAMS_CONNECTION_HPP
 
 
-#include "writebuffer.hpp"
+#define PRIMARY_BUFFER_SIZE (1024)
+
 #include "entity/player.hpp"
-
-#define CONN_BUFFER_SIZE 1024
-
-class NetworkWorker;
+#include "readbuffer.hpp"
+#include "writebuffer.hpp"
 
 enum State
 {
@@ -19,13 +18,44 @@ enum State
 };
 
 /**
- * Handles connection state
+ * Handles connection state, reads, and writes
  */
 class Connection
 {
 public:
+    /**
+     * Open client file descriptor that this Connection object manages reads, connection states, and writes for.
+     */
     const int fd;
-    char rbuf[CONN_BUFFER_SIZE];
+    char primary[PRIMARY_BUFFER_SIZE];
+    /**
+     * The address of the address of where data is being written for each recv() call. The reason this is a double
+     * pointer is because this points to the buffer ends in the read buffer, and as it gets incremented those should
+     * too.
+     */
+    char** write_cursor;
+    /**
+     * How many bytes are allowed to be copied from the socket receive buffer into userspace at write_cursor.
+     */
+    long bytes_allowed;
+    /**
+     * Handles reading the packet content using recv()
+     *
+     * 1. resolve_length(Connection*)
+     * 2. copy_to_buffer(Connection*) if the packet can fit in the primary buffer and
+     *                                it all wasn't read in the call to resolve_length
+     *    (end)
+     * 2. transition_to_secondary(Connection*) if the packet cannot all fit in the primary buffer.
+     *                                         If that's the case, this method will handle the
+     *                                         transition into the secondary buffer.
+     * 3. copy_to_buffer(Connection*)
+     *    (end)
+     */
+    void (*process_events)(Connection*);
+    /**
+     * Used for initial calls to process_events for parsing the packet length.
+     */
+    ReadBuffer rbuf;
 
     explicit Connection(int client_fd);
 
@@ -35,11 +65,23 @@ public:
      */
     ~Connection();
 
+    /**
+     * Reset internal state to prepare for another read
+     */
+    void reset();
+
+    /**
+     * @return True if a packet is ready to be parsed, false if still waiting on data.
+     */
+    [[nodiscard]] bool ready() const;
+
     inline void set_state(State connection_state) { state = connection_state; }
 
     [[nodiscard]] inline State get_state() const { return state; }
 
     void init_player(std::string username, UUID uuid);
+
+    [[nodiscard]] inline Player* player() const { return handle; }
 
     // STATUS
 
@@ -128,7 +170,7 @@ public:
 
      void send_chunk_data_and_update_light(int cx, int cz/*, ChunkData& chunk, LightData& light*/);
 
-     void set_health(float health, char food, float saturation);
+     void send_set_health(float health, char food, float saturation);
 private:
     State state;
     Player* handle;
