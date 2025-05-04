@@ -2,8 +2,7 @@
 // Created by cory on 4/11/25.
 //
 
-#include <cstring>
-#include <iostream>
+#include <bit>
 #include "network/readbuffer.hpp"
 
 #define SEGMENT_BITS (0b01111111)
@@ -196,6 +195,11 @@ unsigned long ReadBuffer::read_ulong()
         cursor->buf += sizeof(unsigned long);
         return rax;
     }
+}
+
+long ReadBuffer::read_long()
+{
+    return std::bit_cast<long>(read_ulong());
 }
 
 unsigned short ReadBuffer::read_ushort()

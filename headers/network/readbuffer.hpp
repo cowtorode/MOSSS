@@ -39,9 +39,9 @@ public:
 
     char read_char();
 
-    inline bool read_bool() { return read_char(); }
-
     unsigned char read_uchar();
+
+    inline bool read_bool() { return read_char(); }
 
     short read_short();
 
@@ -50,6 +50,8 @@ public:
     int read_int();
 
     unsigned long read_ulong();
+
+    long read_long();
 
     float read_float();
 

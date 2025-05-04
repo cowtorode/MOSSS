@@ -65,13 +65,6 @@ public:
 
     [[nodiscard]] inline int iov_size() const noexcept { return iov_cursor; }
 
-    /**
-     * Writes the current sector to the _iov at iov_cursor, dynamically resizing the _iov
-     * if necessary to fill it. This also establishes a new sector for future writes.
-     * @return true if flushed, false if nothing to flush.
-     */
-    bool flush_buffer();
-
     iovec* finalize();
 
     /**
@@ -108,6 +101,13 @@ private:
      *         computed as the distance between the cursor and the end of the buf.
      */
     [[nodiscard]] inline unsigned long sector_remaining() const;
+
+    /**
+     * Writes the current sector to the _iov at iov_cursor, dynamically resizing the _iov
+     * if necessary to fill it. This also establishes a new sector for future writes.
+     * @return true if flushed, false if nothing to flush.
+     */
+    bool flush_buffer();
 
     /**
      * Writes the given bytes of the given size to the finalize at the current iov_cursor position.
