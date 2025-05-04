@@ -48,7 +48,8 @@ add_executable(CLAMS src/main.cpp
         src/loggerimpl.cpp
         headers/status.hpp
         headers/logger.hpp
-        headers/network/clientbound_packet_ids.h
+        headers/network/clientbound_packet_ids.hpp
+        headers/network/ivec.hpp
 )
 
 # Link the target with liburing
