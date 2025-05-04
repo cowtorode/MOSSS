@@ -2,17 +2,13 @@ cmake_minimum_required(VERSION 3.30)
 project(CLAMS)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 find_package(Threads REQUIRED)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-
-# Find liburing library and headers
 find_package(OpenSSL REQUIRED)
-find_library(LIBURING_LIBRARY uring REQUIRED)
-find_path(LIBURING_INCLUDE_DIR liburing.h REQUIRED)
 
 # Include directories
-include_directories(${LIBURING_INCLUDE_DIR})
 include_directories(headers)
 
 # Define the executable target
@@ -53,4 +49,4 @@ add_executable(CLAMS src/main.cpp
 )
 
 # Link the target with liburing
-target_link_libraries(CLAMS PRIVATE ${LIBURING_LIBRARY} OpenSSL::SSL)
+target_link_libraries(CLAMS PRIVATE OpenSSL::SSL)
