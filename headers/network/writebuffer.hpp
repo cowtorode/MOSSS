@@ -65,7 +65,7 @@ public:
 
     [[nodiscard]] inline int iov_size() const noexcept { return iov_cursor; }
 
-    iovec* finalize();
+    iovec* iov();
 
     /**
      * Resets the write buf to its initial state by resetting the sector_start and cursor
@@ -110,7 +110,7 @@ private:
     bool flush_buffer();
 
     /**
-     * Writes the given bytes of the given size to the finalize at the current iov_cursor position.
+     * Writes the given bytes of the given size to the iov at the current iov_cursor position.
      */
     void write_iov(char* bytes, size_t size);
 

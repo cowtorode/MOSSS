@@ -248,7 +248,7 @@ bool WriteBuffer::flush_buffer()
     return false;
 }
 
-iovec* WriteBuffer::finalize()
+iovec* WriteBuffer::iov()
 {
     if (flush_buffer() || iov_cursor)
     {
