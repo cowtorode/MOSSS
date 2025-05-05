@@ -192,7 +192,34 @@ void Connection::init_player(std::string username, UUID uuid)
 
 void Connection::write_wbuf()
 {
-    writev(fd, wbuf.finalize(), wbuf.iov_size());
+    iovec* finalized = wbuf.iov();
+    iovec* iov = finalized;
+    int iov_size = wbuf.iov_size();
+    int iov_cursor = 0;
+
+    while (iov_cursor < iov_size)
+    {
+        ssize_t res = writev(fd, iov, iov_size - iov_cursor);
+
+        if (res == -1)
+        {
+            perror("Connection::write_wbuf(): writev()");
+            break;
+        }
+
+        // While the number of bytes written is greater than or equal to the bytes in the iovec,
+        while (res >= iov->iov_len)
+        {
+            res -= static_cast<ssize_t>(iov->iov_len);
+            // this iovec is getting skipped so we don't need to zero the iov_len
+            // iov->iov_len = 0;
+            ++iov_cursor;
+            iov = finalized + iov_cursor;
+        }
+
+        iov->iov_len -= res;
+        iov->iov_base = reinterpret_cast<char*>(iov->iov_base) + res;
+    }
 
     wbuf.reset();
 }
@@ -202,7 +229,7 @@ void Connection::send_status_response(const std::string& response)
     wbuf.write_byte(STATUS_RESPONSE);
     wbuf.write_string(response);
 
-    debug(std::cout << "[S>C] status_response" << std::endl;)
+    debug(logger().info("[S > %i] status_response", fd);)
     write_wbuf();
 }
 
@@ -211,7 +238,7 @@ void Connection::send_pong_response(long timestamp)
     wbuf.write_byte(STATUS_PONG_RESPONSE);
     wbuf.write_long(timestamp);
 
-    debug(std::cout << "[S>C] pong_response" << std::endl;)
+    debug(logger().info("[S > %i] pong_response", fd);)
     write_wbuf();
 }
 
