@@ -6,6 +6,7 @@
 #include <openssl/pem.h>
 #include <openssl/bio.h>
 #include <cstring>
+#include <algorithm>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
