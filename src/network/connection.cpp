@@ -201,6 +201,8 @@ void Connection::write_wbuf()
     {
         ssize_t res = writev(fd, iov, iov_size - iov_cursor);
 
+        std::cout << res << ", ";
+
         if (res == -1)
         {
             perror("Connection::write_wbuf(): writev()");
@@ -221,6 +223,7 @@ void Connection::write_wbuf()
         iov->iov_base = reinterpret_cast<char*>(iov->iov_base) + res;
     }
 
+    std::cout << std::endl;
     wbuf.reset();
 }
 
@@ -268,6 +271,7 @@ void Connection::send_login_success(const UUID& uuid, const std::string& usernam
     wbuf.write_string(username);
     wbuf.write_string(property);
 
+    debug(logger().info("[S > %i] login_success", fd);)
     write_wbuf();
 }
 
@@ -276,6 +280,7 @@ void Connection::send_set_compression(int size)
     wbuf.write_byte(LOGIN_SET_COMPRESSION);
     wbuf.write_varint(size);
 
+    debug(logger().info("[S > %i] set_compression", fd);)
     write_wbuf();
 }
 
@@ -290,6 +295,7 @@ void Connection::send_plugin_message_config(const std::string& channel, const st
     wbuf.write_string(channel);
     wbuf.write_string(data);
 
+    debug(logger().info("[S > %i] plugin_message_config", fd);)
     write_wbuf();
 }
 
@@ -297,6 +303,7 @@ void Connection::send_finish_config()
 {
     wbuf.write_byte(CONFIG_FINISH);
 
+    debug(logger().info("[S > %i] finish_config", fd);)
     write_wbuf();
 }
 
@@ -310,5 +317,6 @@ void Connection::send_feature_flags(const std::string* flags, int len)
         wbuf.write_string(flags[i]);
     }
 
+    debug(logger().info("[S > %i] feature_flags", fd);)
     write_wbuf();
 }

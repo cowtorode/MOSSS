@@ -252,7 +252,7 @@ iovec* WriteBuffer::iov()
 {
     if (flush_buffer() || iov_cursor)
     {
-        //std::cout << "packet_length: " << packet_length << std::endl;
+        std::cout << "packet_length: " << packet_length << std::endl;
         // if the buf was flushed, we can guarantee at least one iovec present
 
         // write _len to len

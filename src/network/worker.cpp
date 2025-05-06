@@ -76,7 +76,7 @@ void status_request(Connection* conn, ReadBuffer& rbuf)
     //    "online":0
     //  }
     //}
-    conn->send_status_response(R"({"version":{"name":"1.21.4","protocol":769},"enforcesSecureChat":true,"description":"A.Minecraft.Server","players":{"max":20,"online":0}})");
+    conn->send_status_response(R"({"version":{"name":"1.21.4","protocol":769},"enforcesSecureChat":true,"description":"A Minecraft Server","players":{"max":20,"online":0}})");
 }
 
 /**
@@ -107,7 +107,7 @@ void login_start(Connection* conn, ReadBuffer& rbuf)
     // todo validate name and uuid with mojang api?
 
     conn->init_player(username, uuid);
-    conn->send_set_compression(256);
+    //conn->send_set_compression(256);
     // todo fixme uuid
     conn->send_login_success(conn->player()->uuid(), conn->player()->username(), "");
 }
@@ -205,6 +205,8 @@ void plugin_message(Connection* conn, ReadBuffer& rbuf)
 void acknowledge_finish_config(Connection* conn, ReadBuffer& rbuf)
 {
     debug(logger().info("[%i > S] acknowledge_finish_config", conn->fd);)
+
+    conn->set_state(PLAY);
 }
 
 void keep_alive_config(Connection* conn, ReadBuffer& rbuf)
