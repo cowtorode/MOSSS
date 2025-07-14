@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "chunk_cache.hpp"
+#include "world/chunk_cache.hpp"
 
 Chunk *ChunkCache::at(int cx, int cz) const noexcept
 {
