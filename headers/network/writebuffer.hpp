@@ -9,6 +9,7 @@
 #include <string>
 #include <bits/types/struct_iovec.h>
 #include "math/uuid.hpp"
+#include "world/chunk.hpp"
 
 class WriteBuffer
 {
@@ -17,33 +18,33 @@ public:
 
     ~WriteBuffer();
 
-    void write_bool(bool x);
+    void write_byte(int8_t x);
 
-    void write_byte(char x);
+    void write_bool(bool x);
 
     /**
      * Writes a signed 16-bit little-endian integer (defined for little-endian systems.)
      */
-    void write_short_le(short x);
+    void write_short_le(int16_t x);
 
     /**
      * Writes a signed 16-bit big-endian integer (defined for little-endian systems.)
      */
-    void write_short(short x);
+    void write_short(int16_t x);
 
     /**
      * Writes a signed 32-bit little-endian integer (defined for little-endian systems.)
      */
-    void write_int_le(int x);
+    void write_int_le(int32_t x);
 
     /**
      * Writes a signed 32-bit big-endian integer (defined for little-endian systems.)
      */
-    void write_int(int x);
+    void write_int(int32_t x);
 
-    void write_long_le(long x);
+    void write_long_le(int64_t x);
 
-    void write_long(long x);
+    void write_long(int64_t x);
 
     void write_float_le(float x);
 
@@ -53,15 +54,17 @@ public:
 
     void write_double(double x);
 
-    void write_varint(int x);
+    void write_varint(int32_t x);
 
-    void write_varlong(long x);
+    void write_varlong(int64_t x);
 
     void write_uuid(const UUID& uuid);
 
     void write_bytes(char* bytes, size_t size);
 
     void write_string(const std::string& str);
+
+    void write_chunk(const Chunk& chunk);
 
     [[nodiscard]] inline int iov_size() const noexcept { return iov_cursor; }
 
@@ -84,23 +87,23 @@ private:
     /**
      * @return Measurement of how many bytes are allocated in the byte buf.
      */
-    [[nodiscard]] inline unsigned long buffer_size() const;
+    [[nodiscard]] inline size_t buffer_size() const;
 
     /**
      * @return Measurement of how many bytes are written to.
      */
-    [[nodiscard]] inline unsigned long utilized_size() const;
+    [[nodiscard]] inline size_t utilized_size() const;
 
     /**
      * @return Measurement of how many bytes are in the current sector.
      */
-    [[nodiscard]] inline unsigned long sector_size() const;
+    [[nodiscard]] inline size_t sector_size() const;
 
     /**
      * @return Measurement of how many bytes the write cursor has until it runs out of space,
      *         computed as the distance between the cursor and the end of the buf.
      */
-    [[nodiscard]] inline unsigned long sector_remaining() const;
+    [[nodiscard]] inline ptrdiff_t sector_remaining() const;
 
     /**
      * Writes the current sector to the _iov at iov_cursor, dynamically resizing the _iov
@@ -116,7 +119,10 @@ private:
 
     void ensure_capacity(size_t bytes);
 
-    void buffer_resize(size_t bytes);
+    /**
+     * @param size should be positive
+     */
+    void buffer_resize(size_t size);
 
     void iov_resize(int size);
 

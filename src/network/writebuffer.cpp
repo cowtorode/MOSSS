@@ -15,44 +15,45 @@ WriteBuffer::~WriteBuffer()
     delete[] _iov;
 }
 
-unsigned long WriteBuffer::buffer_size() const
+size_t WriteBuffer::buffer_size() const
 {
     return end - buf;
 }
 
-unsigned long WriteBuffer::utilized_size() const
+size_t WriteBuffer::utilized_size() const
 {
     return cursor - buf;
 }
 
-unsigned long WriteBuffer::sector_size() const
+size_t WriteBuffer::sector_size() const
 {
     return cursor - sector_start;
 }
 
-unsigned long WriteBuffer::sector_remaining() const
+ptrdiff_t WriteBuffer::sector_remaining() const
 {
     return end - cursor;
 }
 
-void WriteBuffer::buffer_resize(unsigned long bytes)
+void WriteBuffer::buffer_resize(size_t size)
 {
-    char* resized = new char[bytes];
-    unsigned long to_copy = utilized_size();
+    char* resized = new char[size];
+    size_t to_copy = utilized_size();
 
-    if (bytes < to_copy)
+    if (size < to_copy)
     {
-        // if the new size is less than to_copy, we're not going to copy what doesn't fit in the new buf
-        to_copy = bytes;
+        // if the new size is less than the number of bytes we need to copy,
+        // we're not going to copy what doesn't fit in the new buf
+        to_copy = size;
     }
 
-    for (unsigned long i = 0; i < to_copy; ++i)
+    for (ptrdiff_t i = 0; i < to_copy; ++i)
     {
         // copy the current buf to the new one
         resized[i] = buf[i];
     }
 
-    end = resized + bytes;
+    end = resized + size;
     sector_start = sector_start - buf + resized;
     cursor = cursor - buf + resized;
     delete[] buf;
@@ -88,44 +89,45 @@ void WriteBuffer::iov_resize(int size)
 
 #define WRITE(type, x) ensure_capacity(sizeof(type)); *reinterpret_cast<type*>(cursor) = x; cursor += sizeof(type);
 
+void WriteBuffer::write_byte(int8_t x)
+{
+    WRITE(int8_t, x)
+}
+
 void WriteBuffer::write_bool(bool x)
 {
-    WRITE(bool, x)
+    // This is implemented this way since bool isn't guaranteed to be 1 byte in size
+    write_byte(x ? 1 : 0);
 }
 
-void WriteBuffer::write_byte(char x)
+void WriteBuffer::write_short_le(int16_t x)
 {
-    WRITE(char, x)
+    WRITE(int16_t, x)
 }
 
-void WriteBuffer::write_short_le(short x)
+void WriteBuffer::write_short(int16_t x)
 {
-    WRITE(short, x)
+    write_short_le(std::bit_cast<int16_t>(__builtin_bswap16(x)));
 }
 
-void WriteBuffer::write_short(short x)
+void WriteBuffer::write_int_le(int32_t x)
 {
-    write_short_le(static_cast<short>(__builtin_bswap16(x)));
+    WRITE(int32_t, x)
 }
 
-void WriteBuffer::write_int_le(int x)
+void WriteBuffer::write_int(int32_t x)
 {
-    WRITE(int, x)
+    write_int_le(std::bit_cast<int32_t>(__builtin_bswap32(x)));
 }
 
-void WriteBuffer::write_int(int x)
+void WriteBuffer::write_long_le(int64_t x)
 {
-    write_int_le(static_cast<int>(__builtin_bswap32(x)));
+    WRITE(int64_t, x)
 }
 
-void WriteBuffer::write_long_le(long x)
+void WriteBuffer::write_long(int64_t x)
 {
-    WRITE(long, x)
-}
-
-void WriteBuffer::write_long(long x)
-{
-    write_long_le(static_cast<long>(__builtin_bswap64(x)));
+    write_long_le(std::bit_cast<int64_t>(__builtin_bswap64(x)));
 }
 
 void WriteBuffer::write_float_le(float x)
@@ -135,7 +137,7 @@ void WriteBuffer::write_float_le(float x)
 
 void WriteBuffer::write_float(float x)
 {
-    write_float_le(static_cast<float>(__builtin_bswap32(*reinterpret_cast<int*>(&x))));
+    write_float_le(std::bit_cast<float>(__builtin_bswap32(*reinterpret_cast<int32_t*>(&x))));
 }
 
 void WriteBuffer::write_double_le(double x)
@@ -145,7 +147,7 @@ void WriteBuffer::write_double_le(double x)
 
 void WriteBuffer::write_double(double x)
 {
-    write_double_le(static_cast<double>(__builtin_bswap64(*reinterpret_cast<long*>(&x))));
+    write_double_le(std::bit_cast<double>(__builtin_bswap64(*reinterpret_cast<int64_t*>(&x))));
 }
 
 #define WRITE_VARINT(type, x)                             \
@@ -160,24 +162,24 @@ void WriteBuffer::write_double(double x)
         x >>= 7;                                          \
     }                                                     \
 
-void WriteBuffer::write_varint(int x)
+void WriteBuffer::write_varint(int32_t x)
 {
-    WRITE_VARINT(int, x)
+    WRITE_VARINT(int32_t, x)
 }
 
-void WriteBuffer::write_varlong(long x)
+void WriteBuffer::write_varlong(int64_t x)
 {
-    WRITE_VARINT(long, x)
+    WRITE_VARINT(int64_t, x)
 }
 
 void WriteBuffer::write_uuid(const UUID& uuid)
 {
     ensure_capacity(sizeof(UUID));
 
-    *reinterpret_cast<unsigned long*>(cursor) = __builtin_bswap64(uuid.most);
-    cursor += sizeof(unsigned long);
-    *reinterpret_cast<unsigned long*>(cursor) = __builtin_bswap64(uuid.least);
-    cursor += sizeof(unsigned long);
+    *reinterpret_cast<uint64_t*>(cursor) = __builtin_bswap64(uuid.most);
+    cursor += sizeof(uint64_t);
+    *reinterpret_cast<uint64_t*>(cursor) = __builtin_bswap64(uuid.least);
+    cursor += sizeof(uint64_t);
 }
 
 void WriteBuffer::write_iov(char* bytes, size_t size)
@@ -198,7 +200,7 @@ void WriteBuffer::write_bytes(char* bytes, size_t size)
 {
     if (size)
     {
-        unsigned long sector_len = sector_size();
+        size_t sector_len = sector_size();
         bool sector_exists = sector_len > 0;
 
         // ensure the size is big enough for our two writes to the iovector
@@ -224,8 +226,25 @@ void WriteBuffer::write_bytes(char* bytes, size_t size)
 
 void WriteBuffer::write_string(const std::string& str)
 {
-    write_varint(static_cast<int>(str.size()));
+    write_varint(static_cast<int32_t>(str.size()));
     write_bytes(const_cast<char*>(str.c_str()), str.size());
+}
+
+void WriteBuffer::write_chunk(const Chunk& chunk)
+{
+    // Field Name 	            Field Type                      Notes
+    // Heightmaps 	            Prefixed Array of Heightmap
+    // Data 	                Prefixed Array of Byte
+    // Block
+    // Entities     Packed XZ 	                Unsigned Byte 	The packed section coordinates are relative to the chunk they are in. Values 0-15 are valid.
+    //
+    //                                                          packed_xz = ((blockX & 15) << 4) | (blockZ & 15) // encode
+    //                                                          x = packed_xz >> 4, z = packed_xz & 15 // decode
+    //                          Prefixed Array
+    //              Y 	                        Short 	        The height relative to the world
+    //              Type 	                    VarInt      	The type of block entity
+    //              Data 	                    NBT 	        The block entity's data, without the X, Y, and Z values
+    //https://minecraft.wiki/w/Java_Edition_protocol/Packets#Chunk_Data
 }
 
 bool WriteBuffer::flush_buffer()
@@ -252,7 +271,6 @@ iovec* WriteBuffer::iov()
 {
     if (flush_buffer() || iov_cursor)
     {
-        std::cout << "packet_length: " << packet_length << std::endl;
         // if the buf was flushed, we can guarantee at least one iovec present
 
         // write _len to len

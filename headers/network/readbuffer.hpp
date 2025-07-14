@@ -27,7 +27,7 @@ public:
     /**
      * @return The size (in bytes) of the length, packet identifier, and packet payload, computed as len + sizeof_len
      */
-    [[nodiscard]] int total_packet_length() const;
+    [[nodiscard]] int32_t total_packet_length() const;
 
     void feed(char* buffer);
 
@@ -37,29 +37,29 @@ public:
 
     [[nodiscard]] char** secondary_end();
 
-    char read_char();
+    int8_t read_char();
 
-    unsigned char read_uchar();
+    uint8_t read_uchar();
 
     inline bool read_bool() { return read_char(); }
 
-    short read_short();
+    int16_t read_short();
 
-    unsigned short read_ushort();
+    uint16_t read_ushort();
 
-    int read_int();
+    int32_t read_int();
 
-    unsigned long read_ulong();
+    uint64_t read_ulong();
 
-    long read_long();
+    int64_t read_long();
 
     float read_float();
 
     double read_double();
 
-    int read_varint();
+    int32_t read_varint();
 
-    int read_length();
+    int32_t read_length();
 
     std::string read_string();
 
@@ -88,7 +88,7 @@ private:
     /**
      * Packet length
      */
-    int packet_length;
+    int32_t packet_length;
     int sizeof_length;
 };
 

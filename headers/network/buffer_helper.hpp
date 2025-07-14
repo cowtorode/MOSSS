@@ -1,0 +1,11 @@
+//
+// Created by cory on 6/1/25.
+//
+
+#ifndef CLAMS_BUFFER_HELPER_HPP
+#define CLAMS_BUFFER_HELPER_HPP
+
+#define SEGMENT_BITS (0b01111111)
+#define CONTINUE_BIT (0b10000000)
+
+#endif //CLAMS_BUFFER_HELPER_HPP

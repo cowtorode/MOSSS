@@ -4,9 +4,7 @@
 
 #include <bit>
 #include "network/readbuffer.hpp"
-
-#define SEGMENT_BITS (0b01111111)
-#define CONTINUE_BIT (0b10000000)
+#include "network/buffer_helper.hpp"
 
 ReadBuffer::ReadBuffer() : iv(), cursor_index(0), cursor(iv), pos(0), packet_length(0), sizeof_length(0)
 {}
@@ -49,9 +47,9 @@ void ReadBuffer::next_cursor()
     cursor = iv + cursor_index;
 }
 
-char ReadBuffer::read_char()
+int8_t ReadBuffer::read_char()
 {
-    if (sector_remaining() < sizeof(char))
+    if (sector_remaining() < sizeof(int8_t))
     {
         next_cursor();
     }
@@ -178,7 +176,7 @@ void ReadBuffer::read_across_buffers(char* bytes, size_t remaining, size_t sizeo
     cursor->buf += into_secondary;
 }
 
-unsigned long ReadBuffer::read_ulong()
+uint64_t ReadBuffer::read_ulong()
 {
     // 00 00 00 00 00  EoF    00 00 00
 
@@ -197,7 +195,7 @@ unsigned long ReadBuffer::read_ulong()
     }
 }
 
-long ReadBuffer::read_long()
+int64_t ReadBuffer::read_long()
 {
     return std::bit_cast<long>(read_ulong());
 }
