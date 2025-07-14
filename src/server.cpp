@@ -22,7 +22,7 @@ bool is_running()
     return running.load();
 }
 
-void tick()
+static void tick()
 {
 
 }
