@@ -4,7 +4,7 @@
 
 #include "math/uuid.hpp"
 
-UUID::UUID(unsigned long most, unsigned long least) : most(most), least(least)
+UUID::UUID(uint64_t most, uint64_t least) : most(most), least(least)
 {}
 
 std::ostream& operator<<(std::ostream &os, UUID &uuid)

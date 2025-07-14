@@ -7,14 +7,15 @@
 
 
 #include <ostream>
+#include <cstdint>
 
 class UUID
 {
 public:
-    unsigned long most;
-    unsigned long least;
+    uint64_t most;
+    uint64_t least;
 
-    UUID(unsigned long most, unsigned long least);
+    UUID(uint64_t most, uint64_t least);
 
     friend std::ostream& operator<<(std::ostream& os, UUID& uuid);
 };
