@@ -30,7 +30,7 @@ public:
     char primary[PRIMARY_BUFFER_SIZE];
     /**
      * The address of the address of where data is being written for each recv() call. The reason this is a double
-     * pointer is because this points to the buffer ends in the read buffer, and as it gets incremented those should
+     * pointer is because this points to the buffer end in the read buffer, and as it gets incremented those should
      * too.
      */
     char** write_cursor;
