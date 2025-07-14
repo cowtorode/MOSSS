@@ -229,6 +229,76 @@ void known_packs(Connection* conn, ReadBuffer& rbuf)
     debug(logger().info("[%i > S] known_packs", conn->fd);)
 }
 
+void play_confirm_teleportation(Connection* conn, ReadBuffer& rbuf) {}
+void play_query_block_entity_tag(Connection* conn, ReadBuffer& rbuf) {}
+void play_bundle_item_selected(Connection* conn, ReadBuffer& rbuf) {}
+void play_change_difficulty(Connection* conn, ReadBuffer& rbuf) {}
+void play_acknowledge_message(Connection* conn, ReadBuffer& rbuf) {}
+void play_chat_command(Connection* conn, ReadBuffer& rbuf) {}
+void play_signed_chat_command(Connection* conn, ReadBuffer& rbuf) {}
+void play_chat_message(Connection* conn, ReadBuffer& rbuf) {}
+void play_player_session(Connection* conn, ReadBuffer& rbuf) {}
+void play_chunk_batch_received(Connection* conn, ReadBuffer& rbuf) {}
+void play_client_status(Connection* conn, ReadBuffer& rbuf) {}
+
+void play_client_tick_end(Connection* conn, ReadBuffer& rbuf)
+{
+    // do nothing
+}
+
+void play_client_information(Connection* conn, ReadBuffer& rbuf) {}
+void play_command_suggestions_request(Connection* conn, ReadBuffer& rbuf) {}
+void play_acknowledge_configuration(Connection* conn, ReadBuffer& rbuf) {}
+void play_click_container_button(Connection* conn, ReadBuffer& rbuf) {}
+void play_click_container(Connection* conn, ReadBuffer& rbuf) {}
+void play_close_container(Connection* conn, ReadBuffer& rbuf) {}
+void play_change_container_slot_state(Connection* conn, ReadBuffer& rbuf) {}
+void play_cookie_response(Connection* conn, ReadBuffer& rbuf) {}
+void play_plugin_message(Connection* conn, ReadBuffer& rbuf) {}
+void play_debug_sample_subscription(Connection* conn, ReadBuffer& rbuf) {}
+void play_edit_book(Connection* conn, ReadBuffer& rbuf) {}
+void play_query_entity_tag(Connection* conn, ReadBuffer& rbuf) {}
+void play_interact(Connection* conn, ReadBuffer& rbuf) {}
+void play_jigsaw_generate(Connection* conn, ReadBuffer& rbuf) {}
+void play_keep_alive(Connection* conn, ReadBuffer& rbuf) {}
+void play_lock_difficulty(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_player_position(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_player_position_rotation(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_player_rotation(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_player_movement_flags(Connection* conn, ReadBuffer& rbuf) {}
+void play_move_vehicle(Connection* conn, ReadBuffer& rbuf) {}
+void play_paddle_boat(Connection* conn, ReadBuffer& rbuf) {}
+void play_pick_item_from_block(Connection* conn, ReadBuffer& rbuf) {}
+void play_pick_item_from_entity(Connection* conn, ReadBuffer& rbuf) {}
+void play_ping_request(Connection* conn, ReadBuffer& rbuf) {}
+void play_place_recipe(Connection* conn, ReadBuffer& rbuf) {}
+void play_player_abilities(Connection* conn, ReadBuffer& rbuf) {}
+void play_player_action(Connection* conn, ReadBuffer& rbuf) {}
+void play_player_command(Connection* conn, ReadBuffer& rbuf) {}
+void play_player_input(Connection* conn, ReadBuffer& rbuf) {}
+void play_player_loaded(Connection* conn, ReadBuffer& rbuf) {}
+void play_pong(Connection* conn, ReadBuffer& rbuf) {}
+void play_change_recipe_book_settings(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_seen_recipe(Connection* conn, ReadBuffer& rbuf) {}
+void play_rename_item(Connection* conn, ReadBuffer& rbuf) {}
+void play_resource_pack_response(Connection* conn, ReadBuffer& rbuf) {}
+void play_seen_advancements(Connection* conn, ReadBuffer& rbuf) {}
+void play_select_trade(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_beacon_effect(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_held_item(Connection* conn, ReadBuffer& rbuf) {}
+void play_program_command_block(Connection* conn, ReadBuffer& rbuf) {}
+void play_program_command_block_minecart(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_creative_mode_slot(Connection* conn, ReadBuffer& rbuf) {}
+void play_program_jigsaw_block(Connection* conn, ReadBuffer& rbuf) {}
+void play_program_structure_block(Connection* conn, ReadBuffer& rbuf) {}
+void play_set_test_block(Connection* conn, ReadBuffer& rbuf) {}
+void play_update_sign(Connection* conn, ReadBuffer& rbuf) {}
+void play_swing_arm(Connection* conn, ReadBuffer& rbuf) {}
+void play_teleport_to_entity(Connection* conn, ReadBuffer& rbuf) {}
+void play_test_instance_block_action(Connection* conn, ReadBuffer& rbuf) {}
+void play_use_item_on(Connection* conn, ReadBuffer& rbuf) {}
+void play_use_item(Connection* conn, ReadBuffer& rbuf) {}
+
 typedef void(*packet_parser)(Connection*, ReadBuffer&);
 
 packet_parser handshaking[0x1] = {handshake};
@@ -250,7 +320,72 @@ packet_parser config[0x8] = {
         resource_pack_response,
         known_packs
 };
-packet_parser play[0x3a];
+packet_parser play[0x40] = {
+        play_confirm_teleportation,
+        play_query_block_entity_tag,
+        play_bundle_item_selected,
+        play_change_difficulty,
+        play_acknowledge_message,
+        play_chat_command,
+        play_signed_chat_command,
+        play_chat_message,
+        play_player_session,
+        play_chunk_batch_received,
+        play_client_status,
+        play_client_tick_end,
+        play_client_information,
+        play_command_suggestions_request,
+        play_acknowledge_configuration,
+        play_click_container_button,
+        play_click_container,
+        play_close_container,
+        play_change_container_slot_state,
+        play_cookie_response,
+        play_plugin_message,
+        play_debug_sample_subscription,
+        play_edit_book,
+        play_query_entity_tag,
+        play_interact,
+        play_jigsaw_generate,
+        play_keep_alive,
+        play_lock_difficulty,
+        play_set_player_position,
+        play_set_player_position_rotation,
+        play_set_player_rotation,
+        play_set_player_movement_flags,
+        play_move_vehicle,
+        play_paddle_boat,
+        play_pick_item_from_block,
+        play_pick_item_from_entity,
+        play_ping_request,
+        play_place_recipe,
+        play_player_abilities,
+        play_player_action,
+        play_player_command,
+        play_player_input,
+        play_player_loaded,
+        play_pong,
+        play_change_recipe_book_settings,
+        play_set_seen_recipe,
+        play_rename_item,
+        play_resource_pack_response,
+        play_seen_advancements,
+        play_select_trade,
+        play_set_beacon_effect,
+        play_set_held_item,
+        play_program_command_block,
+        play_program_command_block_minecart,
+        play_set_creative_mode_slot,
+        play_program_jigsaw_block,
+        play_program_structure_block,
+        play_set_test_block,
+        play_update_sign,
+        play_swing_arm,
+        play_teleport_to_entity,
+        play_test_instance_block_action,
+        play_use_item_on,
+        play_use_item
+};
 
 packet_parser* parsers[5] = {handshaking, status, login, config, play};
 
@@ -339,7 +474,7 @@ void NetworkWorker::listen() const
 
         for (int i = 0; i < nfds; ++i)
         {
-            // iterate through all of the epoll events waiting and process them
+            // iterate through all the epoll events waiting to process them
             conn = reinterpret_cast<Connection*>(events[i].data.ptr);
 
             if (!conn)
